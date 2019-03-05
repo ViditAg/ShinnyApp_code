@@ -1,0 +1,44 @@
+library(shiny)
+
+shinyServer(function(input, output){
+  data("iris")
+  library(ggplot2)
+  library(caret)
+  library(randomForest)
+  library(gridExtra)
+  library(e1071)
+  ModelPred<-reactive({
+    set.seed(1234)
+    iTrain<-createDataPartition(iris$Species,p=input$frac,list=FALSE)
+    train<-iris[iTrain,]
+    test<-iris[-iTrain,]
+    ModFit<-train(Species~.,data=train,method="rf")
+    Pred<-predict(ModFit,test)
+    Conf_Mat<-confusionMatrix(Pred,test$Species)
+    a1<-sum(Pred[test$Species=='setosa']=='setosa')/sum(test$Species=='setosa')
+    a2<-sum(Pred[test$Species=='versicolor']=='versicolor')/sum(test$Species=='versicolor')
+    a3<-sum(Pred[test$Species=='virginica']=='virginica')/sum(test$Species=='virginica')
+    return(c('Overall:',Conf_Mat$overall[[1]],' setosa:',a1,', versicolor:',a2,', virginica: ',a3))
+    })
+  output$Accuracy<-renderText({
+    ModelPred()
+  })
+  output$Plot<-renderPlot({
+    if(input$ScatterPlot){
+      p1<-qplot(Sepal.Length,Sepal.Width,col=Species,data=iris)+theme(legend.position="None")
+      p2<-qplot(Sepal.Length,Petal.Length,col=Species,data=iris)+theme(legend.position="top")
+      p3<-qplot(Sepal.Length,Petal.Width,col=Species,data=iris)+theme(legend.position="None")
+      p4<-qplot(Sepal.Width,Petal.Length,col=Species,data=iris)+theme(legend.position="None")
+      p5<-qplot(Sepal.Width,Petal.Width,col=Species,data=iris)+theme(legend.position="None")
+      p6<-qplot(Petal.Length,Petal.Width,col=Species,data=iris)+theme(legend.position="None")
+      grid.arrange(p1,p2,p3,p4,p5,p6,nrow=2,ncol=3)
+    }
+    if(input$BoxPlot){
+      p1<-qplot(Species,Sepal.Length,data=iris,geom=c("boxplot"))
+      p2<-qplot(Species,Sepal.Width,data=iris,geom=c("boxplot"))
+      p3<-qplot(Species,Petal.Length,data=iris,geom=c("boxplot"))
+      p4<-qplot(Species,Petal.Width,data=iris,geom=c("boxplot"))
+      grid.arrange(p1,p2,p3,p4,nrow=2,ncol=2)
+    }
+    })
+})
