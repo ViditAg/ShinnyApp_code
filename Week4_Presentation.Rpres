@@ -1,0 +1,80 @@
+Predicting Flower species
+========================================================
+author: Vidit Agrawal
+date: March 5, 2019
+autosize: true
+
+Execution Summary
+========================================================
+The shinny app performs the following task.
+- Load iris flower data from R-packages.
+- Exploratory analysis via scatter-plot and box-plot indicate different clusters of species can be identified based on botanical features of the flower.
+- Random Forest Model trained on randomly selected 'p'fraction of data and prediction made on rest of the data. Finally, results are presented for overall accuracy of predicting correct species. 
+```{r}
+data(iris)
+```
+```{r,echo=FALSE}
+library(ggplot2)
+library(caret)
+library(randomForest)
+library(gridExtra)
+library(e1071)
+```
+
+Exploratory Analysis
+========================================================
+```{r,echo=FALSE,fig.width=16, fig.height=4,fig.align='center'}
+p1<-qplot(Sepal.Length,Sepal.Width,col=Species,data=iris)+theme(legend.position="None")
+p2<-qplot(Sepal.Length,Petal.Length,col=Species,data=iris)+theme(legend.position="top")
+p3<-qplot(Sepal.Length,Petal.Width,col=Species,data=iris)+theme(legend.position="None")
+p4<-qplot(Sepal.Width,Petal.Length,col=Species,data=iris)+theme(legend.position="None")
+p5<-qplot(Sepal.Width,Petal.Width,col=Species,data=iris)+theme(legend.position="None")
+p6<-qplot(Petal.Length,Petal.Width,col=Species,data=iris)+theme(legend.position="None")
+grid.arrange(p1,p2,p3,p4,p5,p6,nrow=1,ncol=6)
+```
+```{r,echo=FALSE,fig.width=12, fig.height=4,fig.align='center'}
+p1<-qplot(Species,Sepal.Length,data=iris,geom=c("boxplot"))
+p2<-qplot(Species,Sepal.Width,data=iris,geom=c("boxplot"))
+p3<-qplot(Species,Petal.Length,data=iris,geom=c("boxplot"))
+p4<-qplot(Species,Petal.Width,data=iris,geom=c("boxplot"))
+grid.arrange(p1,p2,p3,p4,nrow=1,ncol=4)
+```
+
+Random Forest Model 
+========================================================
+Training-Testing Data split (p=0.7 choosen for current example)
+```{r}
+set.seed(1234)
+iTrain<-createDataPartition(iris$Species,p=0.7,list=FALSE)
+train<-iris[iTrain,]
+test<-iris[-iTrain,]
+```
+
+Training to Random Forest Model.
+```{r}
+ModFit<-train(Species~.,data=train,method="rf")
+```
+Make prediction on testing dataset
+```{r}
+Pred<-predict(ModFit,test)
+Conf_Mat<-confusionMatrix(Pred,test$Species)
+```
+
+Prediction Accuracy
+========================================================
+Overall
+```{r,echo=FALSE}
+Conf_Mat$overall[[1]]
+```
+Species#1. setosa
+```{r,echo=FALSE}
+sum(Pred[test$Species=='setosa']=='setosa')/sum(test$Species=='setosa')
+```
+Species#2. versicolor
+```{r,echo=FALSE}
+sum(Pred[test$Species=='versicolor']=='versicolor')/sum(test$Species=='versicolor')
+```
+Species#3. virginica
+```{r,echo=FALSE}
+sum(Pred[test$Species=='virginica']=='virginica')/sum(test$Species=='virginica')
+```
